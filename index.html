@@ -106,6 +106,16 @@ h1{
   transform:translateY(-1px);
 }
 .opt .arw{color:var(--accent);margin-right:9px;font-size:13px}
+.opt.soft{
+  background:transparent;border:1px dashed #d8d1c5;
+  color:var(--sub);font-size:13.5px;padding:13px 18px;
+  text-align:center;margin-top:4px;
+}
+.opt.soft .arw{display:none}
+.opt.soft:hover{
+  border-style:solid;border-color:var(--accent);color:var(--ink);
+  box-shadow:none;transform:none;background:var(--card);
+}
 
 /* 出口 */
 .exit{margin-top:26px}
@@ -184,7 +194,7 @@ var CONF = {
 var GROUPS = [
   { title:"いま、お困りのこと",        ids:["a1","a2","a3"] },
   { title:"これから、ご一緒できること", ids:["b1","b2","b3"] },
-  { title:"",                          ids:["c1"] }
+  { title:"",                          ids:["c1","d1"] }
 ];
 
 var R = {
@@ -264,6 +274,18 @@ var R = {
       {l:"写真やカタログだけ", r:"それで結構です。似たものを見せていただければ、そこからどう変えたいかを伺っていけます。\n「これのここを、こうしたい」から始まる仕事が、うちはいちばん多いです。"},
       {l:"何もない。困っていることだけ", r:"では、その困りごとを聞かせてください。\nものづくりは、そこからしか始まりません。何を作るかは、あとから一緒に決めればいいことです。"}
     ]
+  },
+  d1:{
+    label:"どれもピンとこない方へ",
+    soft:true,
+    exit:"form",
+    accept:"失礼しました。ここに並べたのは、あくまでよくあるご相談です。\nものづくりの困りごとは、ひとつとして同じものがありません。当てはまらなくて、当たり前だと思っています。",
+    ask:"よろしければ、どちらに近いか教えていただけますか。",
+    opts:[
+      {l:"会社や設備のことを知りたい", exit:"form", r:"ありがとうございます。どんな機械で、どのくらいの大きさまで削れるのか。気になりますよね。\n設備の一覧はお送りできますし、工場を見にきていただくのもいつでも歓迎です。実際に見ていただくのが、いちばん早いと思います。"},
+      {l:"取引の進め方やお支払いのこと", exit:"form", r:"大事なところです。はじめての会社さんとお取引するときは、こちらも同じことを気にします。\n条件や書類のことは、包み隠さずお話しします。まずは何が気がかりか、聞かせてください。"},
+      {l:"やっぱり、直接話したい", exit:"tel", r:"そうですよね。こういうものは、話したほうが早いです。\n私が出ます。手が離せないときは折り返しますので、遠慮なくお声がけください。"}
+    ]
   }
 };
 
@@ -301,7 +323,7 @@ function menu(){
       chat.appendChild(h);
     }
     g.ids.forEach(function(id, i){
-      var b = el('<button class="opt fade"><span class="arw">▸</span>'+esc(R[id].label)+'</button>');
+      var b = el('<button class="opt'+(R[id].soft?" soft":"")+' fade"><span class="arw">▸</span>'+esc(R[id].label)+'</button>');
       b.style.animationDelay = (gi*0.12 + i*0.09 + 0.1)+"s";
       b.onclick = function(){ pick(id); };
       chat.appendChild(b);
@@ -325,7 +347,7 @@ function pick(id){
         b.onclick = function(){
           clearOpts();
           me(o.l);
-          ai(o.r, function(){ exit(r, o.l); });
+          ai(o.r, function(){ exit(r, o.l, o.exit); });
         };
         chat.appendChild(b);
       });
@@ -334,12 +356,13 @@ function pick(id){
   });
 }
 
-function exit(r, choice){
+function exit(r, choice, over){
+  var mode = over || r.exit;
   ai("よろしければ、ここから先は直接お話しさせてください。\nお見積りは無料です。話を聞くだけ、でもかまいません。", function(){
     var url = CONF.formUrl + (CONF.formUrl.indexOf("?")<0?"?":"&") + "ref=" + encodeURIComponent(r.label+"／"+choice);
-    var form = '<a class="cta '+(r.exit==="tel"?"sub":"main")+'" href="'+url+'">見積り・ご相談フォーム<small>選んでいただいた内容を引き継ぎます</small></a>';
-    var tel  = '<a class="cta '+(r.exit==="tel"?"main":"sub")+'" href="tel:'+CONF.tel.replace(/-/g,"")+'">お電話でご相談<small>'+esc(CONF.telLabel)+'</small></a>';
-    var box = el('<div class="exit fade">'+(r.exit==="tel"?tel+form:form+tel)+'<button class="back">はじめの画面にもどる</button></div>');
+    var form = '<a class="cta '+(mode==="tel"?"sub":"main")+'" href="'+url+'">見積り・ご相談フォーム<small>選んでいただいた内容を引き継ぎます</small></a>';
+    var tel  = '<a class="cta '+(mode==="tel"?"main":"sub")+'" href="tel:'+CONF.tel.replace(/-/g,"")+'">お電話でご相談<small>'+esc(CONF.telLabel)+'</small></a>';
+    var box = el('<div class="exit fade">'+(mode==="tel"?tel+form:form+tel)+'<button class="back">はじめの画面にもどる</button></div>');
     box.querySelector(".back").onclick = function(){ chat.innerHTML=""; start(); };
     chat.appendChild(box); down();
   });
